@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using InnBot;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Telegram.Bot;
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -7,6 +9,13 @@ var config = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
+var bot = new TelegramBotClient(config["TELEGRAM_API"]);
+bot.StartReceiving(new MessageHandler(config["HOST_INFO"]));
+
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Build();
+
+Console.ReadKey();
+
+await bot.CloseAsync();
