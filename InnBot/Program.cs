@@ -10,7 +10,7 @@ var config = new ConfigurationBuilder()
     .Build();
 
 var bot = new TelegramBotClient(config["TELEGRAM_API"]);
-bot.StartReceiving(new MessageHandler(config["HOST_INFO"]));
+bot.StartReceiving(new MessageHandler(config["HOST_INFO"], config["INN_API_KEY"]));
 
 var builder = Host.CreateApplicationBuilder(args);
 
