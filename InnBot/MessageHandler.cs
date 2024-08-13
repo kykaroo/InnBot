@@ -6,47 +6,65 @@ namespace InnBot;
 
 public class MessageHandler(string hostInfo) : IUpdateHandler
 {
+    private readonly IRepository _repository = new DictionaryRepository();
+    
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        if (update.Message == null)
+        if (update.Message?.From == null || update.Message.Text == null)
+        {
+            return;
+        }
+
+        var replyText = GetReplyText(update.Message.From.Id, update.Message.Text);
+
+        if (string.IsNullOrEmpty(replyText))
         {
             return;
         }
         
-        switch (update.Message.Text)
+        await botClient.SendTextMessageAsync(update.Message.Chat.Id,
+            replyText, cancellationToken: cancellationToken); 
+    }
+
+    private string GetReplyText(long fromId, string messageText)
+    {
+        switch (messageText)
         {
             case "/start":
-                await botClient.SendTextMessageAsync(update.Message.Chat.Id,
-                    "Приветствую! Для вывода справки введите /help", cancellationToken: cancellationToken);
-                break;
+                _repository.SetLastCommand(fromId, "/start");
+                return "Приветствую! Для вывода справки введите /help";
             
             case "/help":
-                await botClient.SendTextMessageAsync(update.Message.Chat.Id, 
-                    "/start - начало общения с ботом \n" + 
-                    "/hello - вывести имя, фамилию email и ссылку на github хоста \n" +
-                    "/inn - получить наименования и адреса компаний по ИНН (можно использовать несколько ИНН через пробел) \n" +
-                    "/last - повторить последнее действие бота \n" +
-                    "/help - справка о доступных командах \n", 
-                    cancellationToken: cancellationToken);
-                break;
+                _repository.SetLastCommand(fromId, "/help");
+                return "/start - начало общения с ботом \n" +
+                       "/hello - вывести имя, фамилию email и ссылку на github хоста \n" +
+                       "/inn - получить наименования и адреса компаний по ИНН (можно использовать несколько ИНН через пробел) \n" +
+                       "/last - повторить последнее действие бота \n" +
+                       "/help - справка о доступных командах \n";
             
             case "/hello":
-                await botClient.SendTextMessageAsync(update.Message.Chat.Id, hostInfo,
-                    cancellationToken: cancellationToken);
-                break;
+                _repository.SetLastCommand(fromId, "/hello");
+                return hostInfo;
             
             case "/inn":
+                _repository.SetLastCommand(fromId, "/inn");
                 //TODO Реализовать функционал
                 break;
             
             case "/last":
-                //TODO Реализовать функционал
-                break;
+                var lastCommand = _repository.GetLastCommand(fromId);
+
+                return string.IsNullOrEmpty(lastCommand) 
+                    ? "Вы еще не вводили никаких команд"
+                    : GetReplyText(fromId, lastCommand) ;
         }
+
+        return string.Empty;
     }
 
     public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        Console.WriteLine(exception);
+        return Task.CompletedTask;
     }
 }
