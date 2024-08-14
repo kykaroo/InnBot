@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using InnBot.InnApiClasses;
 using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -19,7 +20,7 @@ public class MessageHandler(string hostInfo, string ApiKey) : IUpdateHandler
         }
 
         var text = update.Message.Text.Trim().ToLower().Split();
-        var replyText = GetReplyText(update.Message.From.Id, text);
+        var replyText = await GetReplyText(update.Message.From.Id, text);
 
         foreach (var reply in replyText)
         {
@@ -28,7 +29,7 @@ public class MessageHandler(string hostInfo, string ApiKey) : IUpdateHandler
         } 
     }
 
-    private string[] GetReplyText(long fromId, string[] messageText)
+    private async Task<string[]> GetReplyText(long fromId, string[] messageText)
     {
         switch (messageText[0])
         {
@@ -59,35 +60,71 @@ public class MessageHandler(string hostInfo, string ApiKey) : IUpdateHandler
                     return ["Введите ИИН после команды /inn"];
                 }
 
-                var results = messageText.Where((t, i) => i != 0).Select(GetInnInfo).ToList();
+                var results = messageText.Where((t, i) => i != 0).Select(GetInnInfo).ToArray();
 
-                return results.ToArray();
+                return await Task.WhenAll(results);
             
             case "/last":
                 var lastCommand = _repository.GetLastCommand(fromId);
 
                 return string.IsNullOrEmpty(lastCommand) 
                     ? ["Вы еще не вводили никаких команд"]
-                    : GetReplyText(fromId, [lastCommand]) ;
+                    : await GetReplyText(fromId, [lastCommand]) ;
         }
 
         return [];
     }
 
-    private string GetInnInfo(string messageText)
+    private async Task<string> GetInnInfo(string messageText)
     {
-        var request = (HttpWebRequest)WebRequest.Create("https://api-fns.ru/api/search?q=" + messageText + ApiKey);
+        QueryResult? queryResult;
+        
+        try
+        {
+            var result = await GetTextResponse(messageText);
+
+            queryResult = JsonConvert.DeserializeObject<QueryResult>(result);
+
+            if (queryResult == null || !queryResult.ItemsDto.Any())
+            {
+                return $"Компания с ИНН \"{messageText}\" не найдена";
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return "Ошибка при запросе сторонему сервису";
+        }
+
+        var text = string.Empty;
+
+        var legalEntity = queryResult.ItemsDto[0].LegalEntity;
+        
+        if (legalEntity != null)
+        {
+            text = $"{legalEntity.FullName} \n {legalEntity.Inn}";
+        }
+        
+        var individualEntrepreneur = queryResult.ItemsDto[0].IndividualEntrepreneur;
+        
+        if (individualEntrepreneur != null)
+        {
+            text = $"{individualEntrepreneur.FullFio} \n {individualEntrepreneur.Inn}";
+        }
+
+        return text;
+    }
+
+    private async Task<string> GetTextResponse(string messageText)
+    {
+        var request =
+            (HttpWebRequest)WebRequest.Create("https://api-fns.ru/api/egr?req=" + messageText + "&key=" + ApiKey);
         request.Method = "GET";
-        var response = request.GetResponse();
-                
-        var result = string.Empty;
-
+        var response = await request.GetResponseAsync();
+        
         using var streamReader = new StreamReader(response.GetResponseStream());
-        
-        result = streamReader.ReadToEnd();
-        
-        //TODO Десериализация объекта
-
+            
+        var result = await streamReader.ReadToEndAsync();
         return result;
     }
 
