@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace InnBot;
 
-public class CompanyInfoService(string apiKey) : ICompanyInfoService
+public class CompanyInfoService(string apiKey, string apiUrl) : ICompanyInfoService
 {
     public async Task<string> GetCompanyInfoByInn(string messageText)
     {
@@ -49,7 +49,7 @@ public class CompanyInfoService(string apiKey) : ICompanyInfoService
     private async Task<string> GetWebTextResponse(string messageText)
     {
         var request =
-            (HttpWebRequest)WebRequest.Create("https://api-fns.ru/api/egr?req=" + messageText + "&key=" + apiKey);
+            (HttpWebRequest)WebRequest.Create($"{apiUrl}/egr?req={messageText}&key={apiKey}");
         request.Method = "GET";
         var response = await request.GetResponseAsync();
         
