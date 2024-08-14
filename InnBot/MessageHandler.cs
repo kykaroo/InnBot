@@ -1,17 +1,12 @@
-﻿using System.Net;
-using InnBot.InnApiClasses;
-using Newtonsoft.Json;
+﻿using InnBot.UserDataSaving;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 
 namespace InnBot;
 
-public class MessageHandler(string hostInfo, string ApiKey) : IUpdateHandler
+public class MessageHandler(string hostInfo, IRepository repository, ICompanyInfoService companyInfoService) : IUpdateHandler
 {
-    private readonly IRepository _repository = new DictionaryRepository();
-
-
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         if (update.Message?.From == null || update.Message.Text == null)
@@ -34,11 +29,11 @@ public class MessageHandler(string hostInfo, string ApiKey) : IUpdateHandler
         switch (messageText[0])
         {
             case "/start":
-                _repository.SetLastCommand(fromId, "/start");
+                repository.SetLastCommand(fromId, "/start");
                 return ["Приветствую! Для вывода справки введите /help"];
             
             case "/help":
-                _repository.SetLastCommand(fromId, "/help");
+                repository.SetLastCommand(fromId, "/help");
                 return
                 [
                     "/start - начало общения с ботом \n" +
@@ -49,23 +44,23 @@ public class MessageHandler(string hostInfo, string ApiKey) : IUpdateHandler
                 ];
             
             case "/hello":
-                _repository.SetLastCommand(fromId, "/hello");
+                repository.SetLastCommand(fromId, "/hello");
                 return [hostInfo];
             
             case "/inn": 
-                _repository.SetLastCommand(fromId, "/inn");
+                repository.SetLastCommand(fromId, "/inn");
 
                 if (messageText.Length < 2)
                 {
                     return ["Введите ИИН после команды /inn"];
                 }
 
-                var results = messageText.Where((t, i) => i != 0).Select(GetInnInfo).ToArray();
+                var results = messageText.Where((t, i) => i != 0).Select(companyInfoService.GetCompanyInfoByInn).ToArray();
 
                 return await Task.WhenAll(results);
             
             case "/last":
-                var lastCommand = _repository.GetLastCommand(fromId);
+                var lastCommand = repository.GetLastCommand(fromId);
 
                 return string.IsNullOrEmpty(lastCommand) 
                     ? ["Вы еще не вводили никаких команд"]
@@ -73,59 +68,6 @@ public class MessageHandler(string hostInfo, string ApiKey) : IUpdateHandler
         }
 
         return [];
-    }
-
-    private async Task<string> GetInnInfo(string messageText)
-    {
-        QueryResult? queryResult;
-        
-        try
-        {
-            var result = await GetTextResponse(messageText);
-
-            queryResult = JsonConvert.DeserializeObject<QueryResult>(result);
-
-            if (queryResult == null || !queryResult.ItemsDto.Any())
-            {
-                return $"Компания с ИНН \"{messageText}\" не найдена";
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return "Ошибка при запросе сторонему сервису";
-        }
-
-        var text = string.Empty;
-
-        var legalEntity = queryResult.ItemsDto[0].LegalEntity;
-        
-        if (legalEntity != null)
-        {
-            text = $"{legalEntity.FullName} \n {legalEntity.Inn}";
-        }
-        
-        var individualEntrepreneur = queryResult.ItemsDto[0].IndividualEntrepreneur;
-        
-        if (individualEntrepreneur != null)
-        {
-            text = $"{individualEntrepreneur.FullFio} \n {individualEntrepreneur.Inn}";
-        }
-
-        return text;
-    }
-
-    private async Task<string> GetTextResponse(string messageText)
-    {
-        var request =
-            (HttpWebRequest)WebRequest.Create("https://api-fns.ru/api/egr?req=" + messageText + "&key=" + ApiKey);
-        request.Method = "GET";
-        var response = await request.GetResponseAsync();
-        
-        using var streamReader = new StreamReader(response.GetResponseStream());
-            
-        var result = await streamReader.ReadToEndAsync();
-        return result;
     }
 
     public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)

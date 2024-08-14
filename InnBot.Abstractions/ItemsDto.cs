@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace InnBot.InnApiClasses;
+namespace InnBot.Abstractions;
 
 public class ItemsDto
 {

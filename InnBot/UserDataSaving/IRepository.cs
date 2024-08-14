@@ -1,4 +1,4 @@
-﻿namespace InnBot;
+﻿namespace InnBot.UserDataSaving;
 
 public interface IRepository
 {

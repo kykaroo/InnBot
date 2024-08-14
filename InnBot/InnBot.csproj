@@ -19,4 +19,8 @@
       </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\InnBot.Abstractions\InnBot.Abstractions.csproj" />
+    </ItemGroup>
+
 </Project>

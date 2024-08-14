@@ -1,10 +1,10 @@
 ﻿using Newtonsoft.Json;
 
-namespace InnBot.InnApiClasses;
+namespace InnBot.Abstractions;
 
-public class LegalEntity
+public class IndividualEntrepreneur
 {
-    [JsonProperty("НаимПолнЮЛ")] public string FullName { get; set; }  = string.Empty;
+    [JsonProperty("ФИОПолн")] public string FullFio { get; set; } = string.Empty;
     [JsonProperty("ИНН")] public string Inn { get; set; } = string.Empty;
     [JsonProperty("ОснВидДеят")] public CompanyActivity MainActivity { get; set; } = new();
     [JsonProperty("ДопВидДеят")] public CompanyActivity[] AdditionalActivity { get; set; } = [];

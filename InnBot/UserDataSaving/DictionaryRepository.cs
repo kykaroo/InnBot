@@ -1,4 +1,4 @@
-﻿namespace InnBot;
+﻿namespace InnBot.UserDataSaving;
 
 public class DictionaryRepository : IRepository
 {
