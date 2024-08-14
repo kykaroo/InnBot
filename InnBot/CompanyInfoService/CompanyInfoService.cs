@@ -25,7 +25,7 @@ public class CompanyInfoService(string apiKey, string apiUrl) : ICompanyInfoServ
         catch (Exception e)
         {
             Console.WriteLine(e);
-            return "Ошибка при запросе сторонему сервису";
+            return $"Ошибка при запросе сторонему сервису (ИНН: {messageText})";
         }
 
         var text = string.Empty;

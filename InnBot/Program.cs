@@ -1,24 +1,33 @@
 ﻿using InnBot;
 using InnBot.UserDataSaving;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Telegram.Bot;
 
-var config = new ConfigurationBuilder()
+var builder = Host.CreateApplicationBuilder(args);
+
+builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json")
     .AddJsonFile("secrets.json", true)
     .AddEnvironmentVariables()
     .Build();
 
-var bot = new TelegramBotClient(config["TELEGRAM_API"]);
-bot.StartReceiving(new MessageHandler(config["HOST_INFO"], new DictionaryRepository(),
-    new CompanyInfoService(config["INN_API_KEY"], config["INN_API_URL"])));
+builder.Services.AddSingleton<IRepository, DictionaryRepository>();
 
-var builder = Host.CreateApplicationBuilder(args);
+builder.Services.AddSingleton<ICompanyInfoService, CompanyInfoService>(x =>
+    ActivatorUtilities.CreateInstance<CompanyInfoService>(x, builder.Configuration["INN_API_KEY"],
+        builder.Configuration["INN_API_URL"]));
 
-builder.Build();
+builder.Services.AddSingleton<MessageHandler>(x =>
+    ActivatorUtilities.CreateInstance<MessageHandler>(x, builder.Configuration["HOST_INFO"]));
 
-Console.ReadKey();
+builder.Services.AddSingleton<TelegramBotClient>(x =>
+    ActivatorUtilities.CreateInstance<TelegramBotClient>(x, builder.Configuration["TELEGRAM_API"]));
 
-await bot.CloseAsync();
+builder.Services.AddHostedService<TelegramBot>();
+
+var app = builder.Build();
+
+app.Run();
