@@ -44,6 +44,8 @@ public class MessageHandler(IServiceProvider serviceProvider) : IUpdateHandler
         catch (Exception e)
         {
             Console.WriteLine(e);
+            await botClient.SendTextMessageAsync(update.Message.Chat.Id,
+                $"Некорректная команда: \"{update.Message.Text}\"\nДля вывода справки о доступных командах введите команду \"/help\" ", cancellationToken: cancellationToken);
         }
     }
 
