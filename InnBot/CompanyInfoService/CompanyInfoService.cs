@@ -3,7 +3,7 @@ using System.Text;
 using InnBot.Abstractions;
 using Newtonsoft.Json;
 
-namespace InnBot;
+namespace InnBot.CompanyInfoService;
 
 public class CompanyInfoService(string apiKey, string apiUrl) : ICompanyInfoService
 {

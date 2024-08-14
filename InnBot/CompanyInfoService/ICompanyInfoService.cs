@@ -1,4 +1,4 @@
-﻿namespace InnBot;
+﻿namespace InnBot.CompanyInfoService;
 
 public interface ICompanyInfoService
 {
