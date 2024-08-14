@@ -33,14 +33,14 @@ public class CompanyInfoService(string apiKey, string apiUrl) : ICompanyInfoServ
         
         if (legalEntity != null)
         {
-            text = $"{legalEntity.FullName} \n {legalEntity.Inn}";
+            text = $"{legalEntity.FullName}\nИНН: {legalEntity.Inn}\nАдрес: {legalEntity.Address.FullAddress}";
         }
         
         var individualEntrepreneur = queryResult.ItemsDto[0].IndividualEntrepreneur;
         
         if (individualEntrepreneur != null)
         {
-            text = $"{individualEntrepreneur.FullFio} \n {individualEntrepreneur.Inn}";
+            text = $"{individualEntrepreneur.FullFio}ИНН: \n{individualEntrepreneur.Inn}\nАдрес: {individualEntrepreneur.Address.FullAddress}";
         }
 
         return text;
@@ -56,6 +56,7 @@ public class CompanyInfoService(string apiKey, string apiUrl) : ICompanyInfoServ
         using var streamReader = new StreamReader(response.GetResponseStream());
             
         var result = await streamReader.ReadToEndAsync();
+        
         return result;
     }
 }
