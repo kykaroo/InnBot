@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text;
 using InnBot.Abstractions;
 using Newtonsoft.Json;
 
@@ -34,6 +35,55 @@ public class CompanyInfoService(string apiKey, string apiUrl) : ICompanyInfoServ
         if (legalEntity != null)
         {
             text = $"{legalEntity.FullName}\nИНН: {legalEntity.Inn}\nАдрес: {legalEntity.Address.FullAddress}";
+        }
+        
+        var individualEntrepreneur = queryResult.ItemsDto[0].IndividualEntrepreneur;
+        
+        if (individualEntrepreneur != null)
+        {
+            text = $"{individualEntrepreneur.FullFio}ИНН: \n{individualEntrepreneur.Inn}\nАдрес: {individualEntrepreneur.Address.FullAddress}";
+        }
+
+        return text;
+    }
+
+    public async Task<string> GetCompanyCodesByInn(string messageText)
+    {
+        QueryResult? queryResult;
+        
+        try
+        {
+            var result = await GetWebTextResponse(messageText);
+
+            queryResult = JsonConvert.DeserializeObject<QueryResult>(result);
+
+            if (queryResult == null || !queryResult.ItemsDto.Any())
+            {
+                return $"Компания с ИНН \"{messageText}\" не найдена";
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return "Ошибка при запросе сторонему сервису";
+        }
+
+        var text = string.Empty;
+
+        var legalEntity = queryResult.ItemsDto[0].LegalEntity;
+        
+        if (legalEntity != null)
+        {
+            var builder = new StringBuilder();
+            
+            builder.AppendLine($"{legalEntity.FullName}\nИНН: {legalEntity.Inn}\nОКВЭД:\n");
+
+            var list = legalEntity.AdditionalActivity
+                .Append(legalEntity.MainActivity)
+                .OrderByDescending(x => x.Name)
+                .Select(companyActivity => $"{companyActivity.Name} : {companyActivity.Code}");
+
+            text = string.Join("\n", list);
         }
         
         var individualEntrepreneur = queryResult.ItemsDto[0].IndividualEntrepreneur;

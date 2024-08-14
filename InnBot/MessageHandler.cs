@@ -55,7 +55,8 @@ public class MessageHandler(string hostInfo, IRepository repository, ICompanyInf
                     return ["Введите ИИН после команды /inn"];
                 }
 
-                var results = messageText.Where((t, i) => i != 0).Select(companyInfoService.GetCompanyInfoByInn).ToArray();
+                var results = messageText.Where((t, i) => i != 0).Select(companyInfoService.GetCompanyInfoByInn)
+                    .ToArray();
 
                 return await Task.WhenAll(results);
             
@@ -64,7 +65,22 @@ public class MessageHandler(string hostInfo, IRepository repository, ICompanyInf
 
                 return string.IsNullOrEmpty(lastCommand) 
                     ? ["Вы еще не вводили никаких команд"]
-                    : await GetReplyText(fromId, [lastCommand]) ;
+                    : await GetReplyText(fromId, [lastCommand]);
+            
+            case "/okved":
+                repository.SetLastCommand(fromId, "/okved");
+                
+                if (messageText.Length < 2)
+                {
+                    return ["Введите ИИН после команды /okved"];
+                }
+
+                var results1 = messageText
+                    .Where((t, i) => i != 0)
+                    .Select(companyInfoService.GetCompanyCodesByInn)
+                    .ToArray();
+
+                return await Task.WhenAll(results1);
         }
 
         return [];
