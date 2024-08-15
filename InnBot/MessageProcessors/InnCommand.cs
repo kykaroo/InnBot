@@ -13,9 +13,23 @@ public class InnCommand(ICompanyInfoService companyInfoService) : ICommand
             return ["Введите ИИН после команды /inn"];
         }
 
-        var results = messageText.Where((t, i) => i != 0).Select(companyInfoService.GetCompanyInfoByInn)
-            .ToArray();
+        var result = new List<string>();
+        
+        for (var i = 0; i < messageText.Length; i++)
+        {
+            if (i == 0) continue;
+            
+            var text = messageText[i];
 
-        return await Task.WhenAll(results);
+            if (text.Length is 10 or 12)
+            {
+                result.Add(await companyInfoService.GetCompanyInfoByInn(text));
+                continue;
+            }
+            
+            result.Add($"Некорректный ИНН: {text}");
+        }
+
+        return result.ToArray();
     }
 }
