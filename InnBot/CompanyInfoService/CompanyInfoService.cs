@@ -76,21 +76,35 @@ public class CompanyInfoService(string apiKey, string apiUrl) : ICompanyInfoServ
         {
             var builder = new StringBuilder();
             
-            builder.AppendLine($"{legalEntity.FullName}\nИНН: {legalEntity.Inn}\nОКВЭД:\n");
+            builder.AppendLine($"{legalEntity.FullName}\nИНН: {legalEntity.Inn}\nОКВЭД:");
 
             var list = legalEntity.AdditionalActivity
                 .Append(legalEntity.MainActivity)
                 .OrderByDescending(x => x.Name)
                 .Select(companyActivity => $"{companyActivity.Name} : {companyActivity.Code}");
+            
+            builder.AppendJoin("\n", list);
 
-            text = string.Join("\n", list);
+            text = builder.ToString();
         }
         
         var individualEntrepreneur = queryResult.ItemsDto[0].IndividualEntrepreneur;
         
         if (individualEntrepreneur != null)
         {
-            text = $"{individualEntrepreneur.FullFio}ИНН: \n{individualEntrepreneur.Inn}\nАдрес: {individualEntrepreneur.Address.FullAddress}";
+            var builder = new StringBuilder();
+            
+            builder.AppendLine($"{individualEntrepreneur}\nИНН: {individualEntrepreneur.Inn}\nОКВЭД:");
+
+            var list = individualEntrepreneur.AdditionalActivity
+                .Append(individualEntrepreneur.MainActivity)
+                .OrderByDescending(x => x.Name)
+                .Select(individualEntrepreneurActivity =>
+                    $"{individualEntrepreneurActivity.Name} : {individualEntrepreneurActivity.Code}");
+
+            builder.AppendJoin("\n", list);
+
+            text = builder.ToString();
         }
 
         return text;
