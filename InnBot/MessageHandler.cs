@@ -1,13 +1,14 @@
 ﻿using InnBot.MessageProcessors;
 using InnBot.MessageProcessors.Middleware;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 
 namespace InnBot;
 
-public class MessageHandler(IServiceProvider serviceProvider) : IUpdateHandler
+public class MessageHandler(IServiceProvider serviceProvider, ILogger<MessageHandler> logger) : IUpdateHandler
 {
     private IReadOnlyList<CommandMiddleware>? _middlewares;
     private IReadOnlyList<ICommand>? _commands;
@@ -43,7 +44,8 @@ public class MessageHandler(IServiceProvider serviceProvider) : IUpdateHandler
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            logger.LogError(e, "Ошибка при обработке сообщения от пользователя {UserName} ({UserId})\nСодержание сообщения: {Message}",
+                update.Message.From.Username, update.Message.From.Id,update.Message.Text);
             await botClient.SendTextMessageAsync(update.Message.Chat.Id,
                 $"Некорректная команда: \"{update.Message.Text}\"\nДля вывода справки о доступных командах введите команду \"/help\" ", cancellationToken: cancellationToken);
         }

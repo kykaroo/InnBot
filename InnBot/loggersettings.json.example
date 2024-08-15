@@ -1,0 +1,34 @@
+﻿{
+  "Serilog": {
+    "Using": [
+      "Serilog.Sinks.File",
+      "Serilog.Sinks.Http",
+      "Serilog.Sinks.Console"
+    ],
+    "MinimumLevel": "Debug",
+    "WriteTo": [
+      {
+        "Name": "File",
+        "Args": {
+          "path": "path",
+          "outputTemplate": "[{Level:u3}] {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message:lj}"
+        }
+      },
+      {
+        "Name": "Http",
+        "Args": {
+          "requestUri": "URI",
+          "restrictedToMinimumLevel": "Debug",
+          "queueLimitBytes": "100000",
+          "batchPostingLimit": 50
+        }
+      },
+      {
+        "Name": "Console",
+        "Args": {
+          "restrictedToMinimumLevel": "Debug"
+        }
+      }
+    ]
+  }
+}

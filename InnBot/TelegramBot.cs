@@ -1,18 +1,34 @@
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 
 namespace InnBot;
 
-public class TelegramBot(TelegramBotClient telegramBotClient, MessageHandler messageHandler) : IHostedService
+public class TelegramBot(TelegramBotClient telegramBotClient, MessageHandler messageHandler, ILogger<TelegramBot> logger) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        telegramBotClient.StartReceiving(messageHandler, cancellationToken: cancellationToken);
-        return Task.CompletedTask;
+        try
+        {
+            logger.LogInformation("Application started");
+
+            telegramBotClient.StartReceiving(messageHandler, cancellationToken: cancellationToken);
+
+            logger.LogInformation("Ready to receiving messages");
+
+            return Task.CompletedTask;
+        }
+        catch (Exception e)
+        {
+            logger.LogCritical(e, "Application error");
+            throw;
+        }
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        return telegramBotClient.CloseAsync(cancellationToken: cancellationToken);
+        await telegramBotClient.CloseAsync(cancellationToken: cancellationToken);
+        
+        logger.LogInformation("Stop receiving messages");
     }
 }
